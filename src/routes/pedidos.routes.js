@@ -3,8 +3,6 @@ import {Router} from 'express';
 import {getPedidos, getpedidosxid,postPedidos, putPedidos, patchPedidos, deletePedidos} from '../controladores/pedidosCtrl.js';
 
 
-
-
 const router = Router();
 
 // Armar nuestras rutas
