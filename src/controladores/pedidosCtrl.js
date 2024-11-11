@@ -9,6 +9,8 @@ export const getPedidos = async (req, res) => {
     }
 }
 
+
+
 export const getpedidosxid = async (req, res) => {
     try {
         const [result] = await conmysql.query('SELECT * FROM pedidos WHERE ped_id = ?', [req.params.id]);
@@ -21,16 +23,30 @@ export const getpedidosxid = async (req, res) => {
 
 export const postPedidos = async (req, res) => {
     try {
-        const { cli_id, ped_fecha, usr_id, ped_estado } = req.body;
+        const { cli_id, ped_fecha, usr_id, ped_estado, detalles } = req.body;
+
+        // Crear el pedido
         const [rows] = await conmysql.query(
             'INSERT INTO pedidos (cli_id, ped_fecha, usr_id, ped_estado) VALUES (?, ?, ?, ?)',
             [cli_id, ped_fecha, usr_id, ped_estado]
         );
-        res.send({ id: rows.insertId });
+        const ped_id = rows.insertId;
+
+        // Insertar los detalles del pedido
+        for (const detalle of detalles) {
+            await conmysql.query(
+                'INSERT INTO pedidos_detalle (prod_id, ped_id, det_cantidad, det_precio) VALUES (?, ?, ?, ?)',
+                [detalle.prod_id, ped_id, detalle.cantidad, detalle.prod_precio]
+            );
+        }
+
+        res.send({ id: ped_id, message: 'Pedido creado con éxito' });
     } catch (error) {
-        return res.status(500).json({ message: 'Error al lado del servidor' });
+        console.error(error);
+        return res.status(500).json({ message: 'Error al crear el pedido' });
     }
-}
+};
+
 
 export const putPedidos = async (req, res) => {
     try {
