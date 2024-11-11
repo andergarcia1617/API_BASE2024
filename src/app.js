@@ -36,11 +36,7 @@ app.use('/api', productosRoutes);
 app.use('/api', pedidos_detalleRoutes);
 app.use('/api', pedidosRoutes);
 
-// Puerto dinámico para Render
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Servidor corriendo en el puerto ${port}`);
-});
+
 
 app.use((req, res, next) => {
     res.status(400).json({
