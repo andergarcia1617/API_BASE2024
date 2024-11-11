@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 const corsOptions = { 
-    origin: ['http://localhost:8100', 'https://api-base2024.onrender.com'],
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
