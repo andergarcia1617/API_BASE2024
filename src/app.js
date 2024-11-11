@@ -12,11 +12,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 
-const corsOptions = { 
-    origin: '*',
+const corsOptions = {
+    
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
-};
+  };
+  
 
 app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies

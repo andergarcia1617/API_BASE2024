@@ -1,4 +1,38 @@
 import { conmysql } from '../db.js';
+import cloudinary from 'cloudinary';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Configuración de Cloudinary
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+export const subirImagen = (file) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.v2.uploader.upload_stream(
+            { resource_type: 'image' },
+            (error, result) => {
+                if (error) return reject(new Error("Error al subir imagen a Cloudinary"));
+                resolve(result.secure_url); // Retorna la URL de la imagen
+            }
+        );
+        uploadStream.end(file.buffer);
+    });
+};
+
+const crearProductoEnBD = async (datosProducto) => {
+    const query = 'INSERT INTO productos SET ?';
+    try {
+        const [result] = await conmysql.query(query, datosProducto);
+        return { id: result.insertId, ...datosProducto };
+    } catch (error) {
+        throw new Error('Error al guardar el producto en la base de datos: ' + error.message);
+    }
+};
 
 export const getProductos = async (req, res) => {
     try {
@@ -19,68 +53,60 @@ export const getProductosxid = async (req, res) => {
     }
 };
 
+// productosCtrl.js
+
 export const postProductos = async (req, res) => {
     try {
-      const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body;
-      const prod_imagen = req.file ? `/uploads/${req.file.filename}` : null;  // Obtener el nombre del archivo
-  
-      // Verificar si el producto ya existe
-      const [fila] = await conmysql.query('Select * from productos where prod_codigo=?', [prod_codigo]);
-      if (fila.length > 0) {
-        return res.status(404).json({
-          id: 0,
-          message: 'Producto con código: ' + prod_codigo + ' ya está registrado'
-        });
-      }
-  
-      // Insertar el nuevo producto
-      const [rows] = await conmysql.query('INSERT INTO productos (prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen) VALUES(?,?,?,?,?,?)',
-        [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen]);
-  
-      res.send({
-        id: rows.insertId,
-        message: 'Producto registrado con éxito :)'
-      });
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  };
+        console.log("Archivo de imagen:", req.file); 
+        console.log("Datos del producto:", req.body);
 
-  
+        // Subir la imagen a Cloudinary
+        if (req.file) {
+            const uploadedImageUrl = await subirImagen(req.file);
+            req.body.prod_imagen = uploadedImageUrl;
+        }
+
+        // Crear el producto en la base de datos con los datos de req.body
+        const nuevoProducto = await crearProductoEnBD(req.body);
+
+        res.status(201).json({
+            message: "Producto creado exitosamente",
+            producto: nuevoProducto,
+        });
+    } catch (error) {
+        console.error("Error al crear el producto:", error);
+        res.status(500).json({
+            message: "Error al crear el producto",
+        });
+    }
+};
+
+
 
 export const putProductos = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen } = req.body;
-        const [result] = await conmysql.query(
-            'UPDATE productos SET prod_codigo=?, prod_nombre=?, prod_stock=?, prod_precio=?, prod_activo=?, prod_imagen=? WHERE prod_id=?',
-            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen, id]
-        );
-        if (result.affectedRows <= 0) return res.status(404).json({ message: 'Producto no encontrado' });
+        console.log("Archivo de imagen:", req.file);
+        console.log("Datos del producto:", req.body);
 
-        const [rows] = await conmysql.query('SELECT * FROM productos WHERE prod_id=?', [id]);
-        res.json(rows[0]);
+        if (req.file) {
+            const uploadedImageUrl = await subirImagen(req.file);
+            req.body.prod_imagen = uploadedImageUrl;
+        }
+
+        const productoActualizado = await actualizarProductoEnBD(req.params.id, req.body);
+
+        res.status(200).json({
+            message: "Producto actualizado exitosamente",
+            producto: productoActualizado,
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Algo salió mal' });
+        console.error("Error al actualizar el producto:", error);
+        res.status(500).json({
+            message: "Error al actualizar el producto",
+        });
     }
 };
 
-export const patchProducto = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen } = req.body;
-        const [result] = await conmysql.query(
-            'UPDATE productos SET prod_codigo=IFNULL(?,prod_codigo), prod_nombre=IFNULL(?,prod_nombre), prod_stock=IFNULL(?,prod_stock), prod_precio=IFNULL(?,prod_precio), prod_activo=IFNULL(?,prod_activo), prod_imagen=IFNULL(?,prod_imagen) WHERE prod_id=?',
-            [prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo, prod_imagen, id]
-        );
-        if (result.affectedRows <= 0) return res.status(404).json({ message: 'Producto no encontrado' });
-
-        const [rows] = await conmysql.query('SELECT * FROM productos WHERE prod_id=?', [id]);
-        res.json(rows[0]);
-    } catch (error) {
-        return res.status(500).json({ message: 'Algo salió mal' });
-    }
-};
 
 export const deleteProductos = async (req, res) => {
     try {
