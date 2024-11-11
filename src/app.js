@@ -12,8 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 
-const corsOptions = {
-    origin: '*',  
+const corsOptions = { 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -26,7 +25,7 @@ app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 
 
 // Routes
@@ -35,6 +34,12 @@ app.use('/api', usuariosRoutes);
 app.use('/api', productosRoutes);
 app.use('/api', pedidos_detalleRoutes);
 app.use('/api', pedidosRoutes);
+
+// Puerto dinámico para Render
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Servidor corriendo en el puerto ${port}`);
+});
 
 app.use((req, res, next) => {
     res.status(400).json({
