@@ -24,6 +24,17 @@ export const subirImagen = (file) => {
     });
 };
 
+const actualizarProductoEnBD = async (id, datosProducto) => {
+    const query = 'UPDATE productos SET ? WHERE prod_id = ?';
+    try {
+        const [result] = await conmysql.query(query, [datosProducto, id]);
+        return { id, ...datosProducto }; // Retorna el producto actualizado
+    } catch (error) {
+        throw new Error('Error al actualizar el producto en la base de datos: ' + error.message);
+    }
+};
+
+
 const crearProductoEnBD = async (datosProducto) => {
     const query = 'INSERT INTO productos SET ?';
     try {
@@ -88,11 +99,13 @@ export const putProductos = async (req, res) => {
         console.log("Archivo de imagen:", req.file);
         console.log("Datos del producto:", req.body);
 
+        // Subir la imagen a Cloudinary si se ha proporcionado una nueva
         if (req.file) {
             const uploadedImageUrl = await subirImagen(req.file);
             req.body.prod_imagen = uploadedImageUrl;
         }
 
+        // Llamar a la función para actualizar el producto en la base de datos
         const productoActualizado = await actualizarProductoEnBD(req.params.id, req.body);
 
         res.status(200).json({
@@ -106,6 +119,7 @@ export const putProductos = async (req, res) => {
         });
     }
 };
+
 
 
 export const deleteProductos = async (req, res) => {
