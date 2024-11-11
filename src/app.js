@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 const corsOptions = { 
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
